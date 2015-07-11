@@ -50,8 +50,8 @@ local function paramsForEpoch(epoch)
     end
     local regimes = {
         -- start, end,    LR,   WD,
-        {  1,     18,   1e-2,   5e-4, },
-        { 19,     29,   5e-3,   5e-4  },
+        {  1,     18,   1e-2,   0 },
+        { 19,     29,   5e-3,   0  },
         { 30,     43,   1e-3,   0 },
         { 44,     52,   5e-4,   0 },
         { 53,    1e8,   1e-4,   0 },
@@ -97,7 +97,8 @@ function train()
          -- the job callback (runs in data-worker thread)
          function()
             local inputs, labels = trainLoader:sample(opt.batchSize)
-            return sendTensor(inputs), sendTensor(labels)
+            --return sendTensor(inputs), sendTensor(labels)
+            return sendTensor(inputs) 
          end,
          -- the end callback (runs in the main thread)
          trainBatch
@@ -164,23 +165,29 @@ function trainBatch(inputsThread, labelsThread)
    timer:reset()
    -- set the data and labels to the main thread tensor buffers (free any existing storage)
    receiveTensor(inputsThread, inputsCPU)
-   receiveTensor(labelsThread, labelsCPU)
+   --receiveTensor(labelsThread, labelsCPU)
 
    -- transfer over to GPU
    inputs:resize(inputsCPU:size()):copy(inputsCPU)
-   labels:resize(labelsCPU:size()):copy(labelsCPU)
+   --labels:resize(labelsCPU:size()):copy(labelsCPU)
 
-   local err, outputs = optimator:optimize(
-       optim.sgd,
-       inputs,
-       labels,
-       criterion)
+   model:zeroGradParameters()
+   local output = model:forward(inputs)
+   local err = criterion:forward(output)
+   model:backward(inputs, output)
 
+   local p,g = model:parameters()
+   local b = torch.FloatTensor(25,75):copy(g[1]:view(25,75))
+   local U,S,V = torch.svd(b,'A')
+   local new_b = U*torch.eye(25,75)*V:t()
+   p[1]:copy(new_b:view(25,3,5,5))
+  
    cutorch.synchronize()
    batchNumber = batchNumber + 1
    loss_epoch = loss_epoch + err
    -- top-1 error
    local top1 = 0
+   --[[
    do
       local _,prediction_sorted = outputs:float():sort(2, true) -- descending
       for i=1,opt.batchSize do
@@ -191,6 +198,7 @@ function trainBatch(inputsThread, labelsThread)
       end
       top1 = top1 * 100 / opt.batchSize;
    end
+   --]]
    -- Calculate top-1 error, and print information
    print(('Epoch: [%d][%d/%d]\tTime %.3f Err %.4f Top1-%%: %.2f LR %.0e DataLoadingTime %.3f'):format(
           epoch, batchNumber, opt.epochSize, timer:time().real, err, top1,

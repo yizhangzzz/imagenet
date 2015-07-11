@@ -98,3 +98,4 @@ th main.lua -nDonkeys 0 [...options...]
 - `train.lua` (~190 lines) - logic for training the network. we hard-code a learning rate + weight decay schedule that produces good results.
 - `test.lua` (~120 lines) - logic for testing the network on validation set (including calculating top-1 and top-5 errors)
 - `dataset.lua` (~430 lines) - a general purpose data loader, mostly derived from [here: imagenetloader.torch](https://github.com/soumith/imagenetloader.torch). That repo has docs and more examples of using this loader.
+# imagenet

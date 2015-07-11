@@ -133,19 +133,22 @@ local function on_device_for_module(mod, f)
     return f()
 end
 
-function Optim:optimize(optimMethod, inputs, targets, criterion)
+--function Optim:optimize(optimMethod, inputs, targets, criterion)
+function Optim:optimize(optimMethod, inputs, criterion)
     assert(optimMethod)
     assert(inputs)
-    assert(targets)
+    --assert(targets)
     assert(criterion)
     assert(self.modulesToOptState)
 
     self.model:zeroGradParameters()
     local output = self.model:forward(inputs)
 
-    local err = criterion:forward(output, targets)
+    --local err = criterion:forward(output, targets)
+    local err = criterion:forward(output)
 
-    local df_do = criterion:backward(output, targets)
+    --local df_do = criterion:backward(output, targets)
+    local df_do = criterion:backward(output)
     self.model:backward(inputs, df_do)
 
     -- We'll set these in the loop that iterates over each module. Get them

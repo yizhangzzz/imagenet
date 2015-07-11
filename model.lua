@@ -24,7 +24,8 @@ print('=> Creating model from file: models/' .. config .. '.lua')
 model = createModel(opt.nGPU) -- for the model creation code, check the models/ folder
 
 -- 2. Create Criterion
-criterion = nn.ClassNLLCriterion()
+--criterion = nn.ClassNLLCriterion()
+  criterion = nn.L1Cost()
 
 print('=> Model')
 print(model)
@@ -42,6 +43,9 @@ end
 -- 4. Convert model to CUDA
 print('==> Converting model to CUDA')
 model = model:cuda()
-criterion:cuda()
+
+local p,g = model:parameters()
+--p[1]:mul(0.01)
+p[2]:mul(0.0)
 
 collectgarbage()

@@ -26,9 +26,12 @@ end
 
 local loadSize   = {3, 256, 256}
 local sampleSize = {3, 224, 224}
-
+local f = assert(io.open('log.txt', 'w'))
 local function loadImage(path)
-   local input = image.load(path)
+   if not pcall(function () input = image.load(path) end) then
+      f:write(path)
+      f:write('\n')
+   end
    if input:dim() == 2 then -- 1-channel image loaded as 2D tensor
       input = input:view(1,input:size(1), input:size(2)):repeatTensor(3,1,1)
    elseif input:dim() == 3 and input:size(1) == 1 then -- 1-channel image
@@ -65,7 +68,6 @@ local trainHook = function(self, path)
    local input = loadImage(path)
    iW = input:size(3)
    iH = input:size(2)
-
    -- do random crop
    local oW = sampleSize[3];
    local oH = sampleSize[2]
